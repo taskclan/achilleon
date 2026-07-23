@@ -45,11 +45,54 @@ Full guide in [CONTRIBUTING.md](CONTRIBUTING.md). Quick version:
 5. Open a PR. A maintainer reviews for quality and safety.
 6. When it merges, your entry ships to every Taskclan Intelligence surface in the next release.
 
-## How Taskclan Intelligence uses this
+## Use these skills in ANY AI editor
 
-Taskclan Intelligence pulls Achilleon at build time. The VS Code extension's build step reads the merged YAML, generates a typed TypeScript file, and bakes the result into the extension. Same on the engine side. No runtime dependency on GitHub availability; new entries land whenever we cut a release.
+Achilleon skills are just system prompts. They work anywhere you can paste a prompt or install a slash command. Every push to `main` auto-generates ready-to-use bundles under `dist/`.
 
-You can also consume Achilleon directly from your own tools by pulling this repo and parsing the YAML with any standard parser plus the schemas in `schema/`.
+### Cursor
+
+Grab the master rules file and paste the sections you want into your `.cursorrules` (or into Cursor's Settings → Rules).
+
+    curl -O https://raw.githubusercontent.com/taskclan/achilleon/main/dist/cursor/.cursorrules
+
+The file's top comment explains why you should NOT copy the whole thing at once (it dilutes every reply). Pick the sections that match how you actually work.
+
+### Continue.dev
+
+Merge the generated `customCommands` block into your `~/.continue/config.yaml`:
+
+    curl https://raw.githubusercontent.com/taskclan/achilleon/main/dist/continue/config.yaml
+
+Every skill becomes a `/name` command in Continue's chat.
+
+### Claude Code
+
+Drop the pre-built command files into any project's `.claude/commands/` directory:
+
+    mkdir -p .claude/commands
+    curl -sSL https://github.com/taskclan/achilleon/archive/main.tar.gz \
+      | tar -xz --strip-components=3 -C .claude/commands \
+        'achilleon-main/dist/claude-code/commands'
+
+Claude Code auto-registers each file as a slash command. `debug.md` → `/debug`.
+
+### Claude Desktop, ChatGPT, Perplexity, or anywhere else
+
+Skills are also emitted as plain markdown you can paste into any system-prompt / custom-instruction field:
+
+    # Browse the raw prompts
+    open https://github.com/taskclan/achilleon/tree/main/dist/raw
+
+    # Or grab one
+    curl -O https://raw.githubusercontent.com/taskclan/achilleon/main/dist/raw/debug.md
+
+### Taskclan Intelligence VS Code extension (first-party)
+
+If you install [`taskclan.taskclan-intelligence`](https://marketplace.visualstudio.com/items?itemName=taskclan.taskclan-intelligence) from the VS Code Marketplace, you get every skill wired as `@taskclan /<name>` with T1 routing baked in. The extension pulls Achilleon at build time so new entries land in the next release automatically.
+
+## How the wiring works
+
+Every entry lives once, in a YAML file. On every push to `main`, CI runs `npm run export` and regenerates every editor-specific bundle under `dist/`. Contributors PR the YAML; the bundles regenerate automatically. See `scripts/export.mjs` for the transformation logic; new export targets are welcome.
 
 ## Why open
 

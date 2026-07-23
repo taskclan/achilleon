@@ -6,7 +6,7 @@ Thank you for considering a contribution. This registry gets better with every p
 
 1. Look at existing entries under `skills/`, `agents/`, or `prompts/`. Copy the shape from a nearby example.
 2. Check whether your idea already exists. Duplicates get closed politely; improvements to an existing entry are more welcome than a near-duplicate new one.
-3. Run local validation: `npm install && npm run validate`. CI runs the same check on every PR.
+3. Run `npm install && npm run build` locally. This validates the schema AND regenerates the `dist/` bundles that end-users install into Cursor / Continue / Claude Code. Commit any changes under `dist/` alongside your YAML change. CI fails if you skip this step (dist/ has to stay in sync with source).
 
 ## Adding a new skill
 

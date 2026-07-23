@@ -16,3 +16,16 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run validate
+      # Regenerate dist/ from source and fail if it differs from what's
+      # committed. Contributors must run `npm run build` and commit the
+      # regenerated dist/ files before pushing; keeps the raw-URL install
+      # paths (e.g. Cursor's dist/cursor/.cursorrules) always in sync
+      # with the YAML source of truth.
+      - name: Verify dist/ is up to date
+        run: |
+          npm run export
+          if [ -n "$(git status --porcelain dist/)" ]; then
+            echo "::error::dist/ is out of date. Run 'npm run build' locally and commit the changes."
+            git diff --stat dist/
+            exit 1
+          fi
