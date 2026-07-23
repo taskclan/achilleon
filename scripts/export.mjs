@@ -28,7 +28,7 @@ import yaml from 'js-yaml';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
 
-const TARGETS = new Set(['cursor', 'continue', 'claude-code', 'raw']);
+const TARGETS = new Set(['cursor', 'continue', 'claude-code', 'raw', 'windsurf', 'cline', 'zed']);
 
 // ── Load registry ───────────────────────────────────────────────────────────
 
@@ -241,6 +241,140 @@ ${a.system.trim()}
   console.log(`[export:raw] wrote dist/raw/ (${skills.length + agents.length} files)`);
 }
 
+// ── Target: Windsurf (.windsurfrules) ─────────────────────────────────────
+// Windsurf reads .windsurfrules at the project root (same idea as Cursor's
+// .cursorrules). Format is plain prompt text — same annotated master-file
+// approach so users pick sections rather than dumping everything.
+
+function exportWindsurf() {
+  const target = join(DIST, 'windsurf');
+  wipeAndMake(target);
+  const header = `# Taskclan Achilleon — Windsurf rules pack
+#
+# This file was generated from github.com/taskclan/achilleon.
+# Drop it at your project root as .windsurfrules (or paste selected
+# sections into Windsurf's Rules panel). Windsurf applies these on
+# every AI request in the workspace.
+#
+# Pick sections that match how you actually work; copying everything
+# will dilute every reply. Each section is self-contained.
+
+`;
+
+  let body = '# ═════════════════════════════════════════════════════════════════════\n';
+  body += '# SKILLS\n';
+  body += '# ═════════════════════════════════════════════════════════════════════\n\n';
+  for (const s of skills) {
+    body += `# ─── ${s.name} — ${s.description} (${tierNote(s)}) ───\n`;
+    body += `# Source: github.com/taskclan/achilleon/blob/main/skills/${s.id}.yml\n`;
+    body += s.system.trim() + '\n\n';
+  }
+
+  body += '# ═════════════════════════════════════════════════════════════════════\n';
+  body += '# AGENTS\n';
+  body += '# ═════════════════════════════════════════════════════════════════════\n\n';
+  for (const a of agents) {
+    body += `# ─── @${a.id} — ${a.description} (${tierNote(a)}) ───\n`;
+    body += `# Source: github.com/taskclan/achilleon/blob/main/agents/${a.id}.yml\n`;
+    body += a.system.trim() + '\n\n';
+  }
+
+  writeFileSync(join(target, '.windsurfrules'), header + body);
+  console.log(`[export:windsurf] wrote dist/windsurf/.windsurfrules (${skills.length} skills + ${agents.length} agents)`);
+}
+
+// ── Target: Cline (.clinerules) ────────────────────────────────────────────
+// Cline (VS Code agent, formerly Claude Dev) reads .clinerules at the
+// workspace root as a system-prompt append. Same annotated master-file
+// pattern; users pick sections.
+
+function exportCline() {
+  const target = join(DIST, 'cline');
+  wipeAndMake(target);
+  const header = `# Taskclan Achilleon — Cline rules pack
+#
+# Generated from github.com/taskclan/achilleon.
+# Drop this file at your workspace root as .clinerules. Cline appends
+# it to the system prompt on every task. Pick the sections you actually
+# use and delete the rest — dumping the whole file dilutes every reply.
+
+`;
+
+  let body = '# ═════════════════════════════════════════════════════════════════════\n';
+  body += '# SKILLS\n';
+  body += '# ═════════════════════════════════════════════════════════════════════\n\n';
+  for (const s of skills) {
+    body += `# ─── ${s.name} — ${s.description} (${tierNote(s)}) ───\n`;
+    body += s.system.trim() + '\n\n';
+  }
+
+  body += '# ═════════════════════════════════════════════════════════════════════\n';
+  body += '# AGENTS\n';
+  body += '# ═════════════════════════════════════════════════════════════════════\n\n';
+  for (const a of agents) {
+    body += `# ─── @${a.id} — ${a.description} (${tierNote(a)}) ───\n`;
+    body += a.system.trim() + '\n\n';
+  }
+
+  writeFileSync(join(target, '.clinerules'), header + body);
+  console.log(`[export:cline] wrote dist/cline/.clinerules (${skills.length} skills + ${agents.length} agents)`);
+}
+
+// ── Target: Zed (.rules per-workspace) ────────────────────────────────────
+// Zed's AI Assistant reads .rules or .zed/rules at the workspace root.
+// Same annotated master-file pattern. Zed also supports individual /commands
+// via slash-command files under ~/.config/zed/prompts/, so we ALSO emit
+// per-skill prompt files as a bonus that users can drop into that dir.
+
+function exportZed() {
+  const target = join(DIST, 'zed');
+  wipeAndMake(target);
+
+  // ── Master rules file ─────────
+  const header = `# Taskclan Achilleon — Zed rules pack
+#
+# Generated from github.com/taskclan/achilleon.
+# Two install options for Zed:
+#
+# 1. Workspace-wide (all skills as one system prompt):
+#    Drop this file at your workspace root as .rules (or .zed/rules).
+#    Pick sections you actually want; dumping everything dilutes replies.
+#
+# 2. Per-skill slash commands:
+#    Copy the individual files from prompts/ into ~/.config/zed/prompts/.
+#    Each becomes a /skillname slash command in the Zed AI Assistant.
+
+`;
+
+  let body = '# ═════════════════════════════════════════════════════════════════════\n';
+  body += '# SKILLS\n';
+  body += '# ═════════════════════════════════════════════════════════════════════\n\n';
+  for (const s of skills) {
+    body += `# ─── ${s.name} — ${s.description} (${tierNote(s)}) ───\n`;
+    body += s.system.trim() + '\n\n';
+  }
+  body += '# ═════════════════════════════════════════════════════════════════════\n';
+  body += '# AGENTS\n';
+  body += '# ═════════════════════════════════════════════════════════════════════\n\n';
+  for (const a of agents) {
+    body += `# ─── @${a.id} — ${a.description} (${tierNote(a)}) ───\n`;
+    body += a.system.trim() + '\n\n';
+  }
+  writeFileSync(join(target, '.rules'), header + body);
+
+  // ── Per-skill prompt files ─────────
+  const promptsDir = join(target, 'prompts');
+  ensureDir(promptsDir);
+  for (const s of skills) {
+    writeFileSync(join(promptsDir, `${s.id}.md`), s.system.trim() + '\n');
+  }
+  for (const a of agents) {
+    writeFileSync(join(promptsDir, `${a.id.replace(/^taskclan-/, '')}.md`), a.system.trim() + '\n');
+  }
+
+  console.log(`[export:zed] wrote dist/zed/.rules + ${skills.length + agents.length} prompt files`);
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────
 
 const requested = process.argv.slice(2).filter((a) => TARGETS.has(a));
@@ -249,6 +383,9 @@ const runAll = requested.length === 0;
 if (runAll || requested.includes('cursor')) exportCursor();
 if (runAll || requested.includes('continue')) exportContinue();
 if (runAll || requested.includes('claude-code')) exportClaudeCode();
+if (runAll || requested.includes('windsurf')) exportWindsurf();
+if (runAll || requested.includes('cline')) exportCline();
+if (runAll || requested.includes('zed')) exportZed();
 if (runAll || requested.includes('raw')) exportRaw();
 
 console.log(`[export] done. Output in ${DIST}/`);

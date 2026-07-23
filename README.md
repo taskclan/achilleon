@@ -76,6 +76,30 @@ Drop the pre-built command files into any project's `.claude/commands/` director
 
 Claude Code auto-registers each file as a slash command. `debug.md` → `/debug`.
 
+### Windsurf
+
+    curl -O https://raw.githubusercontent.com/taskclan/achilleon/main/dist/windsurf/.windsurfrules
+
+Drop it at your project root or paste selected sections into Windsurf's Rules panel. Same annotated-master-file approach as Cursor; pick what you use.
+
+### Cline (VS Code)
+
+    curl -O https://raw.githubusercontent.com/taskclan/achilleon/main/dist/cline/.clinerules
+
+Cline appends this to the system prompt on every task. Pick sections; do not dump everything.
+
+### Zed
+
+Two install options:
+
+    # 1. Workspace-wide rules
+    curl -O https://raw.githubusercontent.com/taskclan/achilleon/main/dist/zed/.rules
+
+    # 2. Per-skill slash commands (Zed AI Assistant reads ~/.config/zed/prompts/)
+    curl -sSL https://github.com/taskclan/achilleon/archive/main.tar.gz \
+      | tar -xz --strip-components=3 -C ~/.config/zed/prompts \
+        'achilleon-main/dist/zed/prompts'
+
 ### Claude Desktop, ChatGPT, Perplexity, or anywhere else
 
 Skills are also emitted as plain markdown you can paste into any system-prompt / custom-instruction field:
