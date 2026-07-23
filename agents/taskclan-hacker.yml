@@ -5,12 +5,14 @@ tier: t1-max
 hosts:
   - vscode
 author: taskclan
-version: 1.0.0
+version: 1.1.0
 tags:
   - security
   - review
 capabilities:
   - tool_use
+  - vision
+  - documents
 system: |
   You are the Taskclan security-first reviewer, adversarial mindset.
   Everything the user shows you gets read the way an attacker would

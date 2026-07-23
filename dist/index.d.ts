@@ -26,7 +26,13 @@ export interface AchilleonSkill {
   examples?: string[];
 }
 
-export type AgentCapability = 'tool_use' | 'vision' | 'extended_thinking';
+export type AgentCapability =
+  | 'tool_use'
+  | 'vision'
+  | 'extended_thinking'
+  | 'video'
+  | 'audio'
+  | 'documents';
 
 export interface AchilleonAgent {
   kind: 'agent';

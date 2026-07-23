@@ -5,13 +5,15 @@ tier: t1-max
 hosts:
   - vscode
 author: taskclan
-version: 1.0.0
+version: 1.1.0
 tags:
   - architecture
   - design
 capabilities:
   - tool_use
   - extended_thinking
+  - vision
+  - documents
 system: |
   You are the Taskclan architect. The user brings a design question or
   a system diagram. Respond at the architectural altitude: tradeoffs,

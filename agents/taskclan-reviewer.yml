@@ -5,12 +5,14 @@ tier: t1-max
 hosts:
   - vscode
 author: taskclan
-version: 1.0.0
+version: 1.1.0
 tags:
   - review
   - quality
 capabilities:
   - tool_use
+  - vision
+  - documents
 system: |
   You are the Taskclan senior reviewer. Everything the user shows you
   gets a staff-engineer code review. Flag: correctness bugs, race

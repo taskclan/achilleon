@@ -49,9 +49,9 @@
       "uniqueItems": true,
       "items": {
         "type": "string",
-        "enum": ["tool_use", "vision", "extended_thinking"]
+        "enum": ["tool_use", "vision", "extended_thinking", "video", "audio", "documents"]
       },
-      "description": "Optional flags the runtime honours (e.g. enable tool calls, allow image input, request thinking blocks)."
+      "description": "Optional flags the runtime honours (e.g. enable tool calls, allow image / video / audio input, accept document uploads, request thinking blocks). Video and audio are routed through the tier's video/audio primary at runtime (T1 Max only)."
     },
     "author": {
       "type": "string",
