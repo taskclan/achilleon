@@ -110,6 +110,37 @@ Skills are also emitted as plain markdown you can paste into any system-prompt /
     # Or grab one
     curl -O https://raw.githubusercontent.com/taskclan/achilleon/main/dist/raw/debug.md
 
+### npm — for SDK / tooling authors
+
+If you are building your own tool and want the registry as typed data:
+
+    npm install @taskclan/achilleon
+
+```ts
+import { skills, agents, entries, getSkill, byTier, categories } from '@taskclan/achilleon';
+
+// Every skill and agent, typed.
+for (const s of skills) {
+  console.log(s.id, s.tier, s.description);
+}
+
+// One entry by id.
+const debug = getSkill('debug');
+console.log(debug?.system);
+
+// Group by tier.
+const heavyReasoners = byTier('t1-max');
+```
+
+CJS also works: `const { skills } = require('@taskclan/achilleon')`.
+
+Raw JSON is also directly importable:
+
+```ts
+import registry from '@taskclan/achilleon/registry';
+// { skills: AchilleonSkill[], agents: AchilleonAgent[] }
+```
+
 ### Taskclan Intelligence VS Code extension (first-party)
 
 If you install [`taskclan.taskclan-intelligence`](https://marketplace.visualstudio.com/items?itemName=taskclan.taskclan-intelligence) from the VS Code Marketplace, you get every skill wired as `@taskclan /<name>` with T1 routing baked in. The extension pulls Achilleon at build time so new entries land in the next release automatically.

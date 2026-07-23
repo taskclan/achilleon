@@ -28,7 +28,7 @@ import yaml from 'js-yaml';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
 
-const TARGETS = new Set(['cursor', 'continue', 'claude-code', 'raw', 'windsurf', 'cline', 'zed']);
+const TARGETS = new Set(['cursor', 'continue', 'claude-code', 'raw', 'windsurf', 'cline', 'zed', 'npm']);
 
 // ── Load registry ───────────────────────────────────────────────────────────
 
@@ -375,6 +375,155 @@ function exportZed() {
   console.log(`[export:zed] wrote dist/zed/.rules + ${skills.length + agents.length} prompt files`);
 }
 
+// ── Target: npm package artifacts ─────────────────────────────────────────
+// Emits the JS/TS entrypoints and merged JSON that `@taskclan/achilleon`
+// ships to npm. package.json's `exports` field points here. Consumers do:
+//
+//   // ESM
+//   import { skills, agents, entries, getSkill, getAgent } from '@taskclan/achilleon';
+//   // CJS
+//   const { skills, agents } = require('@taskclan/achilleon');
+//   // Raw data
+//   import registry from '@taskclan/achilleon/registry';
+//
+// All entries flow through the SAME YAML source used everywhere else,
+// so an SDK consumer sees the same content a Cursor user would install.
+
+function exportNpm() {
+  const skillsWithKind = skills.map((s) => ({ kind: 'skill', ...s }));
+  const agentsWithKind = agents.map((a) => ({ kind: 'agent', ...a }));
+  const registry = { skills: skillsWithKind, agents: agentsWithKind };
+
+  writeFileSync(join(DIST, 'registry.json'), JSON.stringify(registry, null, 2));
+  writeFileSync(join(DIST, 'skills.json'), JSON.stringify(skillsWithKind, null, 2));
+  writeFileSync(join(DIST, 'agents.json'), JSON.stringify(agentsWithKind, null, 2));
+
+  // ESM entrypoint — imports the JSON alongside via node:fs so we avoid
+  // import-attribute compatibility issues across Node versions.
+  const esm = `import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+
+/** @type {{ skills: any[], agents: any[] }} */
+const registry = JSON.parse(readFileSync(join(HERE, 'registry.json'), 'utf8'));
+
+export const skills = registry.skills;
+export const agents = registry.agents;
+export const entries = [...registry.agents, ...registry.skills];
+
+export function getSkill(id) {
+  return skills.find((s) => s.id === id);
+}
+
+export function getAgent(id) {
+  return agents.find((a) => a.id === id);
+}
+
+export function getEntry(id) {
+  return entries.find((e) => e.id === id);
+}
+
+/** All skill categories, sorted, unique. */
+export function categories() {
+  return [...new Set(skills.map((s) => s.category))].sort();
+}
+
+/** Everything at the given tier. */
+export function byTier(tier) {
+  return entries.filter((e) => e.tier === tier);
+}
+`;
+  writeFileSync(join(DIST, 'index.mjs'), esm);
+
+  // CJS entrypoint — same shape.
+  const cjs = `const { readFileSync } = require('node:fs');
+const { join } = require('node:path');
+
+const registry = JSON.parse(readFileSync(join(__dirname, 'registry.json'), 'utf8'));
+
+const skills = registry.skills;
+const agents = registry.agents;
+const entries = [...registry.agents, ...registry.skills];
+
+module.exports = {
+  skills,
+  agents,
+  entries,
+  getSkill: (id) => skills.find((s) => s.id === id),
+  getAgent: (id) => agents.find((a) => a.id === id),
+  getEntry: (id) => entries.find((e) => e.id === id),
+  categories: () => [...new Set(skills.map((s) => s.category))].sort(),
+  byTier: (tier) => entries.filter((e) => e.tier === tier),
+};
+`;
+  writeFileSync(join(DIST, 'index.cjs'), cjs);
+
+  // Hand-written type declarations. Kept in sync with schema/*.schema.json
+  // by hand for now; a JSON-Schema-to-TS pass is a future upgrade.
+  const dts = `/**
+ * @taskclan/achilleon — typed access to the open skill registry.
+ * Every entry in this package originates as a YAML file in
+ * github.com/taskclan/achilleon and is validated against
+ * schema/{skill,agent}.schema.json before publishing.
+ */
+
+export type SkillTier = 't1-core' | 't1-flow' | 't1-max' | 't1-auto';
+
+export type SkillCategory = 'Coding' | 'Communication' | 'Learning' | 'Sharing' | 'Other';
+
+export type Host = 'vscode' | 'cli' | 'api';
+
+export interface AchilleonSkill {
+  kind: 'skill';
+  id: string;
+  name: string;
+  description: string;
+  tier: SkillTier;
+  category: SkillCategory;
+  hosts: Host[];
+  system: string;
+  author?: string;
+  version?: string;
+  tags?: string[];
+  examples?: string[];
+}
+
+export type AgentCapability = 'tool_use' | 'vision' | 'extended_thinking';
+
+export interface AchilleonAgent {
+  kind: 'agent';
+  id: string;
+  name: string;
+  description: string;
+  tier: SkillTier;
+  hosts: Host[];
+  system: string;
+  capabilities?: AgentCapability[];
+  author?: string;
+  version?: string;
+  tags?: string[];
+}
+
+export type AchilleonEntry = AchilleonSkill | AchilleonAgent;
+
+export const skills: AchilleonSkill[];
+export const agents: AchilleonAgent[];
+/** Agents first, then skills, in the order they were loaded. */
+export const entries: AchilleonEntry[];
+
+export function getSkill(id: string): AchilleonSkill | undefined;
+export function getAgent(id: string): AchilleonAgent | undefined;
+export function getEntry(id: string): AchilleonEntry | undefined;
+export function categories(): SkillCategory[];
+export function byTier(tier: SkillTier): AchilleonEntry[];
+`;
+  writeFileSync(join(DIST, 'index.d.ts'), dts);
+
+  console.log(`[export:npm] wrote dist/index.{cjs,mjs,d.ts} + dist/{registry,skills,agents}.json (${skills.length} skills + ${agents.length} agents)`);
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────
 
 const requested = process.argv.slice(2).filter((a) => TARGETS.has(a));
@@ -387,5 +536,6 @@ if (runAll || requested.includes('windsurf')) exportWindsurf();
 if (runAll || requested.includes('cline')) exportCline();
 if (runAll || requested.includes('zed')) exportZed();
 if (runAll || requested.includes('raw')) exportRaw();
+if (runAll || requested.includes('npm')) exportNpm();
 
 console.log(`[export] done. Output in ${DIST}/`);

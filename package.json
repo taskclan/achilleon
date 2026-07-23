@@ -1,10 +1,10 @@
 {
   "name": "@taskclan/achilleon",
-  "version": "0.1.0",
-  "description": "Open registry of skills, agents, and prompts loaded by Taskclan Intelligence. Contribute a YAML file to add or improve an entry.",
+  "version": "0.3.0",
+  "description": "Open registry of skills, agents, and prompts loaded by Taskclan Intelligence — and installable in Cursor, Continue.dev, Claude Code, Windsurf, Cline, Zed, or anywhere else you can paste a prompt. Contribute a YAML file to add or improve an entry.",
   "license": "MIT",
   "author": "Taskclan Inc.",
-  "homepage": "https://taskclan.com",
+  "homepage": "https://taskclan.com/skills",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/taskclan/achilleon.git"
@@ -18,16 +18,54 @@
     "agents",
     "skills",
     "prompts",
-    "registry"
+    "registry",
+    "cursor",
+    "continue-dev",
+    "claude-code",
+    "vscode"
   ],
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=18.0.0"
   },
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./registry": "./dist/registry.json",
+    "./registry.json": "./dist/registry.json",
+    "./skills": "./dist/skills.json",
+    "./skills.json": "./dist/skills.json",
+    "./agents": "./dist/agents.json",
+    "./agents.json": "./dist/agents.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/index.cjs",
+    "dist/index.mjs",
+    "dist/index.d.ts",
+    "dist/registry.json",
+    "dist/skills.json",
+    "dist/agents.json",
+    "skills",
+    "agents",
+    "schema",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "validate": "node scripts/validate.mjs",
     "export": "node scripts/export.mjs",
-    "build": "npm run validate && npm run export"
+    "build": "npm run validate && npm run export",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "ajv": "^8.17.1",
