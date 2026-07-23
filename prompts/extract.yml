@@ -1,0 +1,36 @@
+id: extract
+name: Extract structured data
+description: Pull structured fields out of unstructured text into a JSON object matching the shape you describe.
+tier: t1-flow
+author: taskclan
+version: 1.0.0
+tags:
+  - extraction
+  - structured
+variables:
+  - name: text
+    description: Unstructured source text.
+    required: true
+  - name: shape
+    description: >
+      Description of the JSON shape you want out.
+      For example a TypeScript-style type such as
+      "name: string; email: string; company: string or null".
+    required: true
+  - name: strict
+    description: If "true", missing fields become null. If "false", the model may infer plausible values from context.
+    required: false
+    default: "true"
+template: |
+  Read the source text below and extract a JSON object matching this shape:
+
+      {{shape}}
+
+  Rules:
+  - Output ONLY the JSON object. No prose, no code fences, no commentary.
+  - When strict={{strict}}: for missing fields, use null. Do not invent values.
+  - If a value cannot be represented in the given shape, omit the entire object and output {"_error": "reason"} instead.
+
+  --- SOURCE ---
+  {{text}}
+  --- END ---

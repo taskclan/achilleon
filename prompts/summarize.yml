@@ -1,0 +1,32 @@
+id: summarize
+name: Summarize text
+description: Produce a tight, faithful summary of a body of text at a controllable length and altitude.
+tier: t1-flow
+author: taskclan
+version: 1.0.0
+tags:
+  - summary
+  - text
+variables:
+  - name: text
+    description: The source text to summarise.
+    required: true
+  - name: length
+    description: Target length. One of "one sentence", "one paragraph", "bulleted", "5 bullets", "detailed".
+    required: false
+    default: one paragraph
+  - name: audience
+    description: Who the summary is for. Shapes altitude and jargon level. E.g. "senior engineer", "non-technical exec", "10 year old".
+    required: false
+    default: general reader
+template: |
+  Summarise the text below at length "{{length}}" for the audience "{{audience}}".
+
+  Rules:
+  - Faithful to the source. Do not add facts.
+  - Skip generic hedges like "in conclusion" or "overall".
+  - If the source is empty or too short to summarise, say so and stop.
+
+  --- SOURCE TEXT ---
+  {{text}}
+  --- END ---

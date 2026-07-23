@@ -1,0 +1,32 @@
+id: classify
+name: Classify into a fixed set
+description: Classify a piece of text into exactly one of a small set of labels. Returns just the label.
+tier: t1-core
+author: taskclan
+version: 1.0.0
+tags:
+  - classification
+variables:
+  - name: text
+    description: The text to classify.
+    required: true
+  - name: labels
+    description: Comma-separated list of allowed labels. E.g. "billing, technical, refund, general".
+    required: true
+  - name: unknown_label
+    description: The label to return when no other label fits. E.g. "other" or "unknown".
+    required: false
+    default: unknown
+template: |
+  Classify the text below into EXACTLY ONE of these labels:
+  {{labels}}
+
+  If none fit, respond with: {{unknown_label}}
+
+  Rules:
+  - Output the single label, lowercase, and NOTHING else.
+  - No explanation, no punctuation, no code fences.
+
+  --- TEXT ---
+  {{text}}
+  --- END ---

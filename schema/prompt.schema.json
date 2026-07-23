@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taskclan.com/achilleon/schema/prompt.schema.json",
+  "title": "Achilleon Prompt",
+  "description": "A parameterised prompt template loaded by SDK consumers. Different from a skill (fixed system prompt for a slash command) — prompts take user-supplied values and render a final prompt string at call time. Lives at prompts/{id}.yml.",
+  "type": "object",
+  "required": ["id", "name", "description", "template"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,39}$",
+      "description": "Lowercase, hyphen-separated. Must match the filename (without .yml). 2-40 characters."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 60,
+      "description": "Human-readable name shown in docs and pickers."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 200,
+      "description": "One-line description of what the prompt does."
+    },
+    "template": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 8000,
+      "description": "The prompt body. Placeholders use {{variable}} syntax. Every placeholder must have a matching entry in `variables`; the validator enforces this."
+    },
+    "variables": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z_0-9]{0,39}$",
+            "description": "Variable name as it appears in the template ({{name}}). snake_case."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 200,
+            "description": "What the variable is for. Shown in docs + used by SDK tooling."
+          },
+          "required": {
+            "type": "boolean",
+            "default": true,
+            "description": "If false, the SDK renderer allows omission (empty string is substituted)."
+          },
+          "default": {
+            "type": "string",
+            "description": "Default value substituted when a required variable is missing but a default is provided."
+          }
+        }
+      }
+    },
+    "tier": {
+      "type": "string",
+      "enum": ["t1-core", "t1-flow", "t1-max", "t1-auto"],
+      "description": "Recommended T1 tier this prompt runs well on. Consumers can override."
+    },
+    "author": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38}[a-zA-Z0-9])?$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 2, "maxLength": 30 },
+      "maxItems": 10,
+      "uniqueItems": true
+    }
+  }
+}

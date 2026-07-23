@@ -25,6 +25,7 @@ const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const SCHEMAS = {
   skill: JSON.parse(readFileSync(join(ROOT, 'schema/skill.schema.json'), 'utf8')),
   agent: JSON.parse(readFileSync(join(ROOT, 'schema/agent.schema.json'), 'utf8')),
+  prompt: JSON.parse(readFileSync(join(ROOT, 'schema/prompt.schema.json'), 'utf8')),
 };
 
 const ajv = new Ajv({ allErrors: true, strict: false });
@@ -32,11 +33,13 @@ addFormats(ajv);
 const validators = {
   skill: ajv.compile(SCHEMAS.skill),
   agent: ajv.compile(SCHEMAS.agent),
+  prompt: ajv.compile(SCHEMAS.prompt),
 };
 
 const KINDS = [
   { kind: 'skill', dir: 'skills' },
   { kind: 'agent', dir: 'agents' },
+  { kind: 'prompt', dir: 'prompts' },
 ];
 
 let failed = 0;
@@ -96,6 +99,29 @@ for (const { kind, dir } of KINDS) {
       continue;
     }
     idsSeen.set(doc.id, filePath);
+
+    // Prompt-specific: every {{placeholder}} in template must have a
+    // matching entry in `variables`, and every declared variable must be
+    // used in the template. Catches typos in either place before an SDK
+    // consumer hits an "undefined variable" at runtime.
+    if (kind === 'prompt') {
+      const usedInTemplate = new Set(
+        [...doc.template.matchAll(/\{\{\s*([a-z][a-z_0-9]{0,39})\s*\}\}/g)].map((m) => m[1]),
+      );
+      const declared = new Set((doc.variables ?? []).map((v) => v.name));
+      const unmapped = [...usedInTemplate].filter((v) => !declared.has(v));
+      const unused = [...declared].filter((v) => !usedInTemplate.has(v));
+      if (unmapped.length) {
+        console.error(`✗ ${filePath}: template uses {{${unmapped.join('}}, {{')}}} but no matching entry in variables`);
+        failed++;
+        continue;
+      }
+      if (unused.length) {
+        console.error(`✗ ${filePath}: variables declared but not used in template: ${unused.join(', ')}`);
+        failed++;
+        continue;
+      }
+    }
 
     passed++;
   }

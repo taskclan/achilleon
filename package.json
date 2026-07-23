@@ -1,6 +1,6 @@
 {
   "name": "@taskclan/achilleon",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Open registry of skills, agents, and prompts loaded by Taskclan Intelligence — and installable in Cursor, Continue.dev, Claude Code, Windsurf, Cline, Zed, or anywhere else you can paste a prompt. Contribute a YAML file to add or improve an entry.",
   "license": "MIT",
   "author": "Taskclan Inc.",
@@ -43,6 +43,8 @@
     "./skills.json": "./dist/skills.json",
     "./agents": "./dist/agents.json",
     "./agents.json": "./dist/agents.json",
+    "./prompts": "./dist/prompts.json",
+    "./prompts.json": "./dist/prompts.json",
     "./package.json": "./package.json"
   },
   "files": [
@@ -52,8 +54,10 @@
     "dist/registry.json",
     "dist/skills.json",
     "dist/agents.json",
+    "dist/prompts.json",
     "skills",
     "agents",
+    "prompts",
     "schema",
     "README.md",
     "LICENSE"

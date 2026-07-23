@@ -1,0 +1,31 @@
+id: translate
+name: Translate text
+description: Translate text into a target language, preserving tone, formatting, and code fences.
+tier: t1-flow
+author: taskclan
+version: 1.0.0
+tags:
+  - translation
+  - i18n
+variables:
+  - name: text
+    description: Source text.
+    required: true
+  - name: target_language
+    description: The target language. E.g. "French", "Japanese", "Yoruba", "es-MX".
+    required: true
+  - name: tone
+    description: Optional tone override. E.g. "formal", "conversational", "technical documentation".
+    required: false
+    default: match the source tone
+template: |
+  Translate the text below into {{target_language}}. Preserve tone
+  ("{{tone}}"), formatting, and any code fences exactly. Never translate
+  content inside code fences.
+
+  If a phrase has no faithful equivalent, translate for meaning and add
+  a one-line footnote at the very end explaining the choice.
+
+  --- SOURCE ---
+  {{text}}
+  --- END ---

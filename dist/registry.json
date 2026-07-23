@@ -628,5 +628,198 @@
       ],
       "system": "You are the Taskclan sensei — a patient teacher in the Socratic\ntradition. You never give the answer directly. Every reply is a\nquestion that leads the student one step closer. When the student\nanswers correctly, confirm briefly and ask the next question. When\nthey get stuck, offer a smaller hint, still as a question. Only give\nthe direct answer if the student explicitly asks \"just tell me\" three\ntimes, and even then, follow the answer with \"what do you notice\nabout that?\".\n"
     }
+  ],
+  "prompts": [
+    {
+      "kind": "prompt",
+      "id": "classify",
+      "name": "Classify into a fixed set",
+      "description": "Classify a piece of text into exactly one of a small set of labels. Returns just the label.",
+      "tier": "t1-core",
+      "author": "taskclan",
+      "version": "1.0.0",
+      "tags": [
+        "classification"
+      ],
+      "variables": [
+        {
+          "name": "text",
+          "description": "The text to classify.",
+          "required": true
+        },
+        {
+          "name": "labels",
+          "description": "Comma-separated list of allowed labels. E.g. \"billing, technical, refund, general\".",
+          "required": true
+        },
+        {
+          "name": "unknown_label",
+          "description": "The label to return when no other label fits. E.g. \"other\" or \"unknown\".",
+          "required": false,
+          "default": "unknown"
+        }
+      ],
+      "template": "Classify the text below into EXACTLY ONE of these labels:\n{{labels}}\n\nIf none fit, respond with: {{unknown_label}}\n\nRules:\n- Output the single label, lowercase, and NOTHING else.\n- No explanation, no punctuation, no code fences.\n\n--- TEXT ---\n{{text}}\n--- END ---\n"
+    },
+    {
+      "kind": "prompt",
+      "id": "extract",
+      "name": "Extract structured data",
+      "description": "Pull structured fields out of unstructured text into a JSON object matching the shape you describe.",
+      "tier": "t1-flow",
+      "author": "taskclan",
+      "version": "1.0.0",
+      "tags": [
+        "extraction",
+        "structured"
+      ],
+      "variables": [
+        {
+          "name": "text",
+          "description": "Unstructured source text.",
+          "required": true
+        },
+        {
+          "name": "shape",
+          "description": "Description of the JSON shape you want out. For example a TypeScript-style type such as \"name: string; email: string; company: string or null\".\n",
+          "required": true
+        },
+        {
+          "name": "strict",
+          "description": "If \"true\", missing fields become null. If \"false\", the model may infer plausible values from context.",
+          "required": false,
+          "default": "true"
+        }
+      ],
+      "template": "Read the source text below and extract a JSON object matching this shape:\n\n    {{shape}}\n\nRules:\n- Output ONLY the JSON object. No prose, no code fences, no commentary.\n- When strict={{strict}}: for missing fields, use null. Do not invent values.\n- If a value cannot be represented in the given shape, omit the entire object and output {\"_error\": \"reason\"} instead.\n\n--- SOURCE ---\n{{text}}\n--- END ---\n"
+    },
+    {
+      "kind": "prompt",
+      "id": "judge",
+      "name": "LLM as judge",
+      "description": "Evaluate an AI-generated answer against a question and a rubric. Returns a structured verdict.",
+      "tier": "t1-max",
+      "author": "taskclan",
+      "version": "1.0.0",
+      "tags": [
+        "eval",
+        "judge"
+      ],
+      "variables": [
+        {
+          "name": "question",
+          "description": "The original question or prompt the AI was answering.",
+          "required": true
+        },
+        {
+          "name": "answer",
+          "description": "The AI-generated answer to evaluate.",
+          "required": true
+        },
+        {
+          "name": "rubric",
+          "description": "Rubric describing what a good answer looks like. Can be a paragraph or a bulleted list.",
+          "required": true
+        }
+      ],
+      "template": "You are evaluating an AI-generated answer as a strict but fair judge.\nScore the answer against the rubric. Never side with the answer by\ndefault; look for real failures.\n\n--- QUESTION ---\n{{question}}\n--- END QUESTION ---\n\n--- ANSWER ---\n{{answer}}\n--- END ANSWER ---\n\n--- RUBRIC ---\n{{rubric}}\n--- END RUBRIC ---\n\nRespond with a JSON object exactly matching this shape (no prose):\n\n    {\n      \"verdict\": \"pass\" | \"fail\" | \"partial\",\n      \"score\": 0-10 integer,\n      \"reasoning\": \"one short paragraph\",\n      \"failures\": [\"specific issue 1\", \"specific issue 2\"]\n    }\n"
+    },
+    {
+      "kind": "prompt",
+      "id": "refine",
+      "name": "Refine text with feedback",
+      "description": "Rewrite a draft in response to specific feedback, preserving intent and unaffected sections.",
+      "tier": "t1-flow",
+      "author": "taskclan",
+      "version": "1.0.0",
+      "tags": [
+        "refine",
+        "editing"
+      ],
+      "variables": [
+        {
+          "name": "draft",
+          "description": "The current text to refine.",
+          "required": true
+        },
+        {
+          "name": "feedback",
+          "description": "The specific changes to apply. Can be a bulleted list or a paragraph.",
+          "required": true
+        },
+        {
+          "name": "preserve",
+          "description": "What must NOT change. E.g. \"keep all code snippets exactly as-is\", \"keep the ending paragraph\".",
+          "required": false,
+          "default": "keep everything not explicitly targeted by the feedback"
+        }
+      ],
+      "template": "Refine the draft below by applying the feedback. Follow these rules:\n\n1. Apply every piece of feedback that is actionable. If a feedback item\n   is unclear, note it in a one-line \"clarify:\" comment at the end and\n   skip it rather than guessing.\n2. Preserve: {{preserve}}\n3. Do not editorialise about the feedback. Output only the refined\n   version, followed by any clarify: comments.\n\n--- DRAFT ---\n{{draft}}\n--- END DRAFT ---\n\n--- FEEDBACK ---\n{{feedback}}\n--- END FEEDBACK ---\n"
+    },
+    {
+      "kind": "prompt",
+      "id": "summarize",
+      "name": "Summarize text",
+      "description": "Produce a tight, faithful summary of a body of text at a controllable length and altitude.",
+      "tier": "t1-flow",
+      "author": "taskclan",
+      "version": "1.0.0",
+      "tags": [
+        "summary",
+        "text"
+      ],
+      "variables": [
+        {
+          "name": "text",
+          "description": "The source text to summarise.",
+          "required": true
+        },
+        {
+          "name": "length",
+          "description": "Target length. One of \"one sentence\", \"one paragraph\", \"bulleted\", \"5 bullets\", \"detailed\".",
+          "required": false,
+          "default": "one paragraph"
+        },
+        {
+          "name": "audience",
+          "description": "Who the summary is for. Shapes altitude and jargon level. E.g. \"senior engineer\", \"non-technical exec\", \"10 year old\".",
+          "required": false,
+          "default": "general reader"
+        }
+      ],
+      "template": "Summarise the text below at length \"{{length}}\" for the audience \"{{audience}}\".\n\nRules:\n- Faithful to the source. Do not add facts.\n- Skip generic hedges like \"in conclusion\" or \"overall\".\n- If the source is empty or too short to summarise, say so and stop.\n\n--- SOURCE TEXT ---\n{{text}}\n--- END ---\n"
+    },
+    {
+      "kind": "prompt",
+      "id": "translate",
+      "name": "Translate text",
+      "description": "Translate text into a target language, preserving tone, formatting, and code fences.",
+      "tier": "t1-flow",
+      "author": "taskclan",
+      "version": "1.0.0",
+      "tags": [
+        "translation",
+        "i18n"
+      ],
+      "variables": [
+        {
+          "name": "text",
+          "description": "Source text.",
+          "required": true
+        },
+        {
+          "name": "target_language",
+          "description": "The target language. E.g. \"French\", \"Japanese\", \"Yoruba\", \"es-MX\".",
+          "required": true
+        },
+        {
+          "name": "tone",
+          "description": "Optional tone override. E.g. \"formal\", \"conversational\", \"technical documentation\".",
+          "required": false,
+          "default": "match the source tone"
+        }
+      ],
+      "template": "Translate the text below into {{target_language}}. Preserve tone\n(\"{{tone}}\"), formatting, and any code fences exactly. Never translate\ncontent inside code fences.\n\nIf a phrase has no faithful equivalent, translate for meaning and add\na one-line footnote at the very end explaining the choice.\n\n--- SOURCE ---\n{{text}}\n--- END ---\n"
+    }
   ]
 }

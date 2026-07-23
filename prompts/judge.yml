@@ -1,0 +1,44 @@
+id: judge
+name: LLM as judge
+description: Evaluate an AI-generated answer against a question and a rubric. Returns a structured verdict.
+tier: t1-max
+author: taskclan
+version: 1.0.0
+tags:
+  - eval
+  - judge
+variables:
+  - name: question
+    description: The original question or prompt the AI was answering.
+    required: true
+  - name: answer
+    description: The AI-generated answer to evaluate.
+    required: true
+  - name: rubric
+    description: Rubric describing what a good answer looks like. Can be a paragraph or a bulleted list.
+    required: true
+template: |
+  You are evaluating an AI-generated answer as a strict but fair judge.
+  Score the answer against the rubric. Never side with the answer by
+  default; look for real failures.
+
+  --- QUESTION ---
+  {{question}}
+  --- END QUESTION ---
+
+  --- ANSWER ---
+  {{answer}}
+  --- END ANSWER ---
+
+  --- RUBRIC ---
+  {{rubric}}
+  --- END RUBRIC ---
+
+  Respond with a JSON object exactly matching this shape (no prose):
+
+      {
+        "verdict": "pass" | "fail" | "partial",
+        "score": 0-10 integer,
+        "reasoning": "one short paragraph",
+        "failures": ["specific issue 1", "specific issue 2"]
+      }

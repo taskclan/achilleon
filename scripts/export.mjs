@@ -43,9 +43,10 @@ function loadDir(sub) {
 
 const skills = loadDir('skills');
 const agents = loadDir('agents');
+const prompts = loadDir('prompts');
 
-if (!skills.length && !agents.length) {
-  console.error('[export] no skills or agents found — aborting');
+if (!skills.length && !agents.length && !prompts.length) {
+  console.error('[export] no skills, agents, or prompts found — aborting');
   process.exit(1);
 }
 
@@ -238,7 +239,35 @@ ${a.system.trim()}
 `;
     writeFileSync(join(target, `${a.id}.md`), md);
   }
-  console.log(`[export:raw] wrote dist/raw/ (${skills.length + agents.length} files)`);
+  // Prompts live under raw/prompts/ so they don't collide with skill/agent
+  // ids of the same name (a "summarize" prompt and a "summarize" skill can
+  // coexist). Each doc shows the template + the variables it takes.
+  const promptsDir = join(target, 'prompts');
+  ensureDir(promptsDir);
+  for (const p of prompts) {
+    const varsBlock = (p.variables ?? []).map((v) => {
+      const req = v.required === false ? ' (optional)' : '';
+      const def = v.default !== undefined ? ` — default: \`${v.default}\`` : '';
+      return `- **{{${v.name}}}**${req}: ${v.description}${def}`;
+    }).join('\n');
+    const md = `# ${p.name} — ${p.description}
+
+Prompt template. Recommended tier: ${p.tier ? tierNote(p) : 't1-flow'}.
+Source: github.com/taskclan/achilleon/blob/main/prompts/${p.id}.yml
+
+## Variables
+
+${varsBlock || '_This prompt takes no variables._'}
+
+## Template
+
+\`\`\`
+${p.template.trim()}
+\`\`\`
+`;
+    writeFileSync(join(promptsDir, `${p.id}.md`), md);
+  }
+  console.log(`[export:raw] wrote dist/raw/ (${skills.length + agents.length} files + ${prompts.length} prompts)`);
 }
 
 // ── Target: Windsurf (.windsurfrules) ─────────────────────────────────────
@@ -392,11 +421,34 @@ function exportZed() {
 function exportNpm() {
   const skillsWithKind = skills.map((s) => ({ kind: 'skill', ...s }));
   const agentsWithKind = agents.map((a) => ({ kind: 'agent', ...a }));
-  const registry = { skills: skillsWithKind, agents: agentsWithKind };
+  const promptsWithKind = prompts.map((p) => ({ kind: 'prompt', ...p }));
+  const registry = { skills: skillsWithKind, agents: agentsWithKind, prompts: promptsWithKind };
 
   writeFileSync(join(DIST, 'registry.json'), JSON.stringify(registry, null, 2));
   writeFileSync(join(DIST, 'skills.json'), JSON.stringify(skillsWithKind, null, 2));
   writeFileSync(join(DIST, 'agents.json'), JSON.stringify(agentsWithKind, null, 2));
+  writeFileSync(join(DIST, 'prompts.json'), JSON.stringify(promptsWithKind, null, 2));
+
+  // Shared render logic — inlined into both CJS + ESM so we do not need a
+  // separate helper module. Mustache-style {{var}} with a single-pass
+  // string.replace using a regex that respects the same character class
+  // the schema validator accepts. Missing required vars throw; missing
+  // optional vars substitute the empty string.
+  const renderHelper = `function _render(id, values, prompts) {
+  const p = prompts.find((x) => x.id === id);
+  if (!p) throw new Error('achilleon: prompt "' + id + '" not found');
+  const provided = values || {};
+  const used = new Set();
+  const output = p.template.replace(/\\{\\{\\s*([a-z][a-z_0-9]{0,39})\\s*\\}\\}/g, (_, name) => {
+    used.add(name);
+    if (provided[name] !== undefined && provided[name] !== null) return String(provided[name]);
+    const varDef = (p.variables || []).find((v) => v.name === name);
+    if (varDef && varDef.default !== undefined) return varDef.default;
+    if (varDef && varDef.required === false) return '';
+    throw new Error('achilleon: prompt "' + id + '" missing required variable "' + name + '"');
+  });
+  return output;
+}`;
 
   // ESM entrypoint — imports the JSON alongside via node:fs so we avoid
   // import-attribute compatibility issues across Node versions.
@@ -406,11 +458,12 @@ import { dirname, join } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-/** @type {{ skills: any[], agents: any[] }} */
+/** @type {{ skills: any[], agents: any[], prompts: any[] }} */
 const registry = JSON.parse(readFileSync(join(HERE, 'registry.json'), 'utf8'));
 
 export const skills = registry.skills;
 export const agents = registry.agents;
+export const prompts = registry.prompts;
 export const entries = [...registry.agents, ...registry.skills];
 
 export function getSkill(id) {
@@ -425,6 +478,10 @@ export function getEntry(id) {
   return entries.find((e) => e.id === id);
 }
 
+export function getPrompt(id) {
+  return prompts.find((p) => p.id === id);
+}
+
 /** All skill categories, sorted, unique. */
 export function categories() {
   return [...new Set(skills.map((s) => s.category))].sort();
@@ -433,6 +490,13 @@ export function categories() {
 /** Everything at the given tier. */
 export function byTier(tier) {
   return entries.filter((e) => e.tier === tier);
+}
+
+${renderHelper}
+
+/** Render a prompt template with values. Missing required vars throw. */
+export function render(id, values) {
+  return _render(id, values, prompts);
 }
 `;
   writeFileSync(join(DIST, 'index.mjs'), esm);
@@ -445,17 +509,23 @@ const registry = JSON.parse(readFileSync(join(__dirname, 'registry.json'), 'utf8
 
 const skills = registry.skills;
 const agents = registry.agents;
+const prompts = registry.prompts;
 const entries = [...registry.agents, ...registry.skills];
+
+${renderHelper}
 
 module.exports = {
   skills,
   agents,
+  prompts,
   entries,
   getSkill: (id) => skills.find((s) => s.id === id),
   getAgent: (id) => agents.find((a) => a.id === id),
   getEntry: (id) => entries.find((e) => e.id === id),
+  getPrompt: (id) => prompts.find((p) => p.id === id),
   categories: () => [...new Set(skills.map((s) => s.category))].sort(),
   byTier: (tier) => entries.filter((e) => e.tier === tier),
+  render: (id, values) => _render(id, values, prompts),
 };
 `;
   writeFileSync(join(DIST, 'index.cjs'), cjs);
@@ -508,16 +578,47 @@ export interface AchilleonAgent {
 
 export type AchilleonEntry = AchilleonSkill | AchilleonAgent;
 
+export interface AchilleonPromptVariable {
+  name: string;
+  description: string;
+  required?: boolean;
+  default?: string;
+}
+
+export interface AchilleonPrompt {
+  kind: 'prompt';
+  id: string;
+  name: string;
+  description: string;
+  template: string;
+  variables?: AchilleonPromptVariable[];
+  tier?: SkillTier;
+  author?: string;
+  version?: string;
+  tags?: string[];
+}
+
 export const skills: AchilleonSkill[];
 export const agents: AchilleonAgent[];
+export const prompts: AchilleonPrompt[];
 /** Agents first, then skills, in the order they were loaded. */
 export const entries: AchilleonEntry[];
 
 export function getSkill(id: string): AchilleonSkill | undefined;
 export function getAgent(id: string): AchilleonAgent | undefined;
 export function getEntry(id: string): AchilleonEntry | undefined;
+export function getPrompt(id: string): AchilleonPrompt | undefined;
 export function categories(): SkillCategory[];
 export function byTier(tier: SkillTier): AchilleonEntry[];
+
+/**
+ * Render a prompt template with values. Missing required variables throw;
+ * missing optional variables substitute the empty string.
+ *
+ *   import { render } from '@taskclan/achilleon';
+ *   const filled = render('summarize', { text: articleBody, length: '5 bullets' });
+ */
+export function render(id: string, values: Record<string, string | number | boolean>): string;
 `;
   writeFileSync(join(DIST, 'index.d.ts'), dts);
 

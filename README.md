@@ -10,9 +10,9 @@ Three kinds of entries live in this repo:
 
 | Kind | What it is | Where it runs |
 |---|---|---|
-| **Skill** | A single slash command with a fixed system prompt and tier binding | Inside `@taskclan` on the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=taskclan.taskclan-intelligence) and (eventually) the CLI + web playground |
-| **Agent** | A named chat participant with a locked personality (`@taskclan-reviewer`, `@taskclan-guru`, ...) | VS Code chat |
-| **Prompt** | A parameterised prompt template loaded by key from the Taskclan SDK | Anywhere the SDK runs |
+| **Skill** | A single slash command with a fixed system prompt and tier binding | Inside `@taskclan` on the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=taskclan.taskclan-intelligence), Cursor / Continue / Claude Code (via `dist/*` bundles), or anywhere else you can paste a prompt |
+| **Agent** | A named chat participant with a locked personality (`@taskclan-reviewer`, `@taskclan-guru`, ...) | VS Code chat via the extension; also exportable as Cursor / Continue slash commands |
+| **Prompt** | A parameterised template with `{{variables}}` — you fill in values at call time | Any SDK consumer via `render()` from `@taskclan/achilleon`. Ships with helpers for `summarize`, `translate`, `extract`, `classify`, `judge`, `refine`. |
 
 ## Directory shape
 
@@ -117,7 +117,7 @@ If you are building your own tool and want the registry as typed data:
     npm install @taskclan/achilleon
 
 ```ts
-import { skills, agents, entries, getSkill, byTier, categories } from '@taskclan/achilleon';
+import { skills, agents, prompts, render, getSkill, byTier, categories } from '@taskclan/achilleon';
 
 // Every skill and agent, typed.
 for (const s of skills) {
@@ -130,6 +130,13 @@ console.log(debug?.system);
 
 // Group by tier.
 const heavyReasoners = byTier('t1-max');
+
+// Render a parameterised prompt template.
+const filled = render('summarize', {
+  text: articleBody,
+  length: '5 bullets',
+});
+// filled is now a full prompt string — hand it to any LLM.
 ```
 
 CJS also works: `const { skills } = require('@taskclan/achilleon')`.

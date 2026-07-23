@@ -44,13 +44,44 @@ export interface AchilleonAgent {
 
 export type AchilleonEntry = AchilleonSkill | AchilleonAgent;
 
+export interface AchilleonPromptVariable {
+  name: string;
+  description: string;
+  required?: boolean;
+  default?: string;
+}
+
+export interface AchilleonPrompt {
+  kind: 'prompt';
+  id: string;
+  name: string;
+  description: string;
+  template: string;
+  variables?: AchilleonPromptVariable[];
+  tier?: SkillTier;
+  author?: string;
+  version?: string;
+  tags?: string[];
+}
+
 export const skills: AchilleonSkill[];
 export const agents: AchilleonAgent[];
+export const prompts: AchilleonPrompt[];
 /** Agents first, then skills, in the order they were loaded. */
 export const entries: AchilleonEntry[];
 
 export function getSkill(id: string): AchilleonSkill | undefined;
 export function getAgent(id: string): AchilleonAgent | undefined;
 export function getEntry(id: string): AchilleonEntry | undefined;
+export function getPrompt(id: string): AchilleonPrompt | undefined;
 export function categories(): SkillCategory[];
 export function byTier(tier: SkillTier): AchilleonEntry[];
+
+/**
+ * Render a prompt template with values. Missing required variables throw;
+ * missing optional variables substitute the empty string.
+ *
+ *   import { render } from '@taskclan/achilleon';
+ *   const filled = render('summarize', { text: articleBody, length: '5 bullets' });
+ */
+export function render(id: string, values: Record<string, string | number | boolean>): string;

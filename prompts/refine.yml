@@ -1,0 +1,37 @@
+id: refine
+name: Refine text with feedback
+description: Rewrite a draft in response to specific feedback, preserving intent and unaffected sections.
+tier: t1-flow
+author: taskclan
+version: 1.0.0
+tags:
+  - refine
+  - editing
+variables:
+  - name: draft
+    description: The current text to refine.
+    required: true
+  - name: feedback
+    description: The specific changes to apply. Can be a bulleted list or a paragraph.
+    required: true
+  - name: preserve
+    description: What must NOT change. E.g. "keep all code snippets exactly as-is", "keep the ending paragraph".
+    required: false
+    default: keep everything not explicitly targeted by the feedback
+template: |
+  Refine the draft below by applying the feedback. Follow these rules:
+
+  1. Apply every piece of feedback that is actionable. If a feedback item
+     is unclear, note it in a one-line "clarify:" comment at the end and
+     skip it rather than guessing.
+  2. Preserve: {{preserve}}
+  3. Do not editorialise about the feedback. Output only the refined
+     version, followed by any clarify: comments.
+
+  --- DRAFT ---
+  {{draft}}
+  --- END DRAFT ---
+
+  --- FEEDBACK ---
+  {{feedback}}
+  --- END FEEDBACK ---

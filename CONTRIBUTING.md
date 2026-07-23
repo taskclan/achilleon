@@ -52,6 +52,45 @@ Create `agents/my-agent.yml`. Same fields as a skill except:
 - `name` is the display name (e.g. "Taskclan Something")
 - No `category` field; agents have their own dimension.
 
+## Adding a new prompt
+
+A prompt is a parameterised template with `{{variable}}` placeholders that SDK consumers render at call time. Different from a skill (which has a fixed system prompt for a slash command).
+
+Create `prompts/my-prompt.yml`:
+
+```yaml
+id: my-prompt
+name: My Prompt
+description: One line describing what the prompt does.
+tier: t1-flow            # optional; recommended tier
+variables:
+  - name: text
+    description: The text to process.
+    required: true         # default: true
+  - name: length
+    description: How long the reply should be.
+    required: false
+    default: one paragraph
+template: |
+  Process the text below with length {{length}}.
+
+  {{text}}
+```
+
+Rules the validator enforces:
+
+- Every `{{placeholder}}` in `template` must have a matching entry in `variables`.
+- Every declared variable must be used in the template (no dead vars).
+- Variable names are lowercase with underscores allowed.
+
+Consumers use it via:
+
+```ts
+import { render } from '@taskclan/achilleon';
+render('my-prompt', { text: 'hello' });
+// → the template with values substituted. Missing required vars throw.
+```
+
 ## Prompt-writing conventions
 
 - **Lead with intent.** The first sentence of your `system` field should name what the AI is being asked to do.
