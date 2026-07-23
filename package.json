@@ -1,0 +1,35 @@
+{
+  "name": "@taskclan/achilleon",
+  "version": "0.1.0",
+  "description": "Open registry of skills, agents, and prompts loaded by Taskclan Intelligence. Contribute a YAML file to add or improve an entry.",
+  "license": "MIT",
+  "author": "Taskclan Inc.",
+  "homepage": "https://taskclan.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taskclan/achilleon.git"
+  },
+  "bugs": {
+    "url": "https://github.com/taskclan/achilleon/issues"
+  },
+  "keywords": [
+    "taskclan",
+    "ai",
+    "agents",
+    "skills",
+    "prompts",
+    "registry"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate.mjs"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "js-yaml": "^4.1.0"
+  }
+}
