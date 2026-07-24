@@ -4,6 +4,12 @@ All notable changes to `@taskclan/achilleon` land here. Format follows
 [keep-a-changelog](https://keepachangelog.com/en/1.1.0/). Versions
 are [semver](https://semver.org).
 
+## 0.5.1 — 2026-07-24
+
+### Changed
+
+- **Docs-only ship** — `CHANGELOG.md` is now included in the published tarball so it renders on the npm package page. No code changes.
+
 ## 0.5.0 — 2026-07-23
 
 ### Added
